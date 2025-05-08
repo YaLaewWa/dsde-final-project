@@ -7,6 +7,14 @@ import pydeck as pdk
 import plotly.express as px
 import json
 
+def toDayHour(d):
+  h = (d - int(d)) * 24
+  days = (d > 1) * "s" + " "
+  hours = (h > 1) * "s" + " "
+  dayText = (str(int(d)) + " day" + days) if int(d) > 0 else ""
+  hourText = (str(int(h)) + " hour" + hours) if int(h) > 0 else ""
+  return (dayText + hourText)
+
 # with open("subdistricts.geojson", encoding="utf-8") as f:
 #     geojson_data = json.load(f)
 
@@ -17,6 +25,7 @@ def load_data():
     data = pd.read_csv(oldDataPath, index_col=0, nrows=3000)
     data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
     data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
+    data['display_duration'] = data['time_to_solve'].apply(toDayHour)
     data = data.drop(columns=['coords'])
     return data
 
@@ -28,6 +37,7 @@ def load_streaming():
         data = pd.read_csv(newDataPath, index_col=0)
         data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
         data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
+        data['display_duration'] = data['time_to_solve'].apply(toDayHour)
         data = data.drop(columns=['coords'])
     except:
         data = pd.DataFrame(data={'ticket_id' : [],'type' : [],'organization' : [],'comment':[],'coords':[],'subdistrict' : [],'timestamp' : [],'photo' : [],'time_to_solve' : [],'severity' : []})
@@ -165,7 +175,7 @@ def plotOld():
                         <b>Type: </b>{type}
                     </div>
                     <div>
-                        <b>Time to solve (days): </b>{time_to_solve}
+                        <b>Time to solve: </b>{display_duration}
                     </div>
                     <div>
                         <b>Severity: </b><span style="color: {color_hex}">{severity}</span>
@@ -250,7 +260,7 @@ def plotNew():
                         <b>Type: </b>{type}
                     </div>
                     <div>
-                        <b>Time to solve (days): </b>{time_to_solve}
+                        <b>Estimated TTS: </b>{display_duration}
                     </div>
                     <div>
                         <b>Severity: </b><span style="color: {color_hex}">{severity}</span>
