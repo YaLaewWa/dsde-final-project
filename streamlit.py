@@ -31,11 +31,7 @@ problem_types = ['น้ำท่วม', 'ร้องเรียน', 'คว
 # Sidebar controls
 # map_layer_type = st.sidebar.radio('Map Type', ["ScatterplotLayer", "HeatmapLayer"])
 
-map_style = st.sidebar.radio(
-    "Map Style",
-    ["dark", "light", "streets", "satellite"]
-)
-map_style = "mapbox://styles/mapbox/" + map_style + "-v9"
+map_style = "mapbox://styles/mapbox/dark-v9"
 
 view_state = pdk.ViewState(
                 longitude=df['longitude'].mean(),
@@ -110,8 +106,11 @@ def plot():
     for i in problem_types:
         if prob_dict[i]:
             chosen_type.add(i)
-    type_str = ', '.join(list(chosen_type))
-    st.write("**Selected type**: ", type_str)
+    # [st.badge(i) for i in chosen_type]
+    # st.write("**Selected type**: ")
+    badge = ' '.join([f":green-badge[{i}]" for i in chosen_type])
+    st.markdown("**Selected type**: " + badge)
+    
 
     df['type'] = [i[1:-1].split(',') if type(i) == str else [] for i in df['type']]
 
@@ -179,21 +178,31 @@ def plot():
     if len(viz) != 0:
         tab1.pydeck_chart(scatter)
         tab2.pydeck_chart(heatmap)
+    tab1.write("**Label:**")
+    cols = tab1.columns(5)
+    for i, (label, color) in enumerate(severity_color_mapping.items()):
+         with cols[i]:
+            st.markdown(
+                f"<div style='background-color: rgb({color[0]}, {color[1]}, {color[2]}); width: 15px; height: 15px; display: inline-block; margin-right: 10px;'></div>"
+                f"{label}",
+                unsafe_allow_html=True
+            )
 
-def histogram():
+def graph():
     st.write('# Time to solve')
     fig = px.histogram(df, x="time_to_solve", labels={'time_to_solve': 'Time to solve (days)'})
     st.plotly_chart(fig)
 
     st.write('# Severity')
-    fig = px.histogram(df, x="severity")
+    fig = px.pie(df, names="severity", color='severity', color_discrete_sequence=px.colors.sequential.RdBu[4::-1])
     st.plotly_chart(fig)
+    # fig = px.pie(pd.DataFrame({'idx': range(11)}), names="idx", color='idx', color_discrete_sequence=px.colors.sequential.RdBu[::-1])
+    # st.plotly_chart(fig)
 
+    @st.cache_data
     def calculate_mean_ttl():
         ttl = df.groupby('severity').mean("time_to_solve")
         ttl = ttl.reset_index()
-        sev = ['Very Low', 'Low', 'Medium', 'High', 'Very High']
-        ttl_list = []
         sev = ['Very Low', 'Low', 'Medium', 'High', 'Very High']
         ttl_list = []
         for i in sev:
@@ -230,12 +239,12 @@ def histogram():
 def main():
     page = st.sidebar.radio(
         "Choose page",
-        ['Plot', 'Histogram', 'Geojson']
+        ['Plot', 'Histogram']
     )
     if page == 'Plot':
         plot()
     elif page == 'Histogram':
-        histogram()
+        graph()
     # elif page == 'Geojson':
     #     geojson()
 
