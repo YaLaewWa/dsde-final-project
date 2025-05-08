@@ -1,0 +1,5 @@
+#!/bin/bash
+rm checkpoint.txt
+rm data.csv
+docker exec -ti kafka /opt/kafka/bin/kafka-topics.sh --delete --topic scrapingData --bootstrap-server :9092
+docker exec -ti kafka /opt/kafka/bin/kafka-topics.sh --create --topic scrapingData --bootstrap-server :9092

@@ -1,0 +1,17 @@
+{
+  "namespace" : "predictedData.avro",
+  "type" : "record",
+  "name" : "predictedData",
+  "fields" : [
+    {"name" : "ticket_id", "type" : "string"},
+    {"name" : "type", "type" : "string"},
+    {"name" : "organization", "type" : "string"},
+    {"name" : "comment", "type" : "string"},
+    {"name" : "coords", "type" : "string"},
+    {"name" : "subdistrict", "type" : "string"},
+    {"name" : "timestamp", "type" : "string"},
+    {"name" : "photo", "type" : "string"},
+    {"name" : "severity", "type" : "string"},
+    {"name" : "time_to_solve", "type" : "float"}
+  ]
+}
