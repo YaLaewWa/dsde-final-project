@@ -22,7 +22,7 @@ def toDayHour(d):
 # Function to load data
 @st.cache_data
 def load_data():
-    oldDataPath = 'data/toRak.csv'
+    oldDataPath = 'data/mock3kRows.csv'
     data = pd.read_csv(oldDataPath, index_col=0, nrows=3000)
     data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
     data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
@@ -327,11 +327,12 @@ def graph():
     fig = px.histogram(old_df, x="time_to_solve", labels={'time_to_solve': 'Time to solve (days)'}, nbins=math.ceil(old_df.time_to_solve.max()))
     st.plotly_chart(fig)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write('# Severity')
-        fig = px.pie(old_df, names="severity", color='severity', color_discrete_sequence=px.colors.sequential.RdBu[4::-1])
-        st.plotly_chart(fig)
+    st.write('### Overall Average time to solve:', toDayHour(old_df['time_to_solve'].mean()))
+
+
+    st.write('# Severity')
+    fig = px.pie(old_df, names="severity", color='severity', color_discrete_sequence=px.colors.sequential.RdBu[4::-1])
+    st.plotly_chart(fig)
     # fig = px.pie(pd.DataFrame({'idx': range(11)}), names="idx", color='idx', color_discrete_sequence=px.colors.sequential.RdBu[::-1])
     # st.plotly_chart(fig)
 
@@ -350,11 +351,10 @@ def graph():
         mean_ttl = pd.DataFrame({'Severity':sev, 'Mean time to solve (days)': ttl_list})
         return mean_ttl
 
-    with col2:
-        st.write('## Mean time to solve for each severity')
-        mean_ttl = calculate_mean_ttl()
-        fig = px.bar(mean_ttl, x='Severity', y='Mean time to solve (days)')
-        st.plotly_chart(fig)
+    st.write('## Mean time to solve for each severity')
+    mean_ttl = calculate_mean_ttl()
+    fig = px.bar(mean_ttl, x='Severity', y='Mean time to solve (days)')
+    st.plotly_chart(fig)
 
 def main():
     page = st.sidebar.radio(
