@@ -51,7 +51,7 @@ map_style = "mapbox://styles/mapbox/dark-v9"
 view_state = pdk.ViewState(
                 longitude=old_df['longitude'].mean(),
                 latitude=old_df['latitude'].mean(),
-                zoom=9
+                zoom=9.4
             )
 
 severity_color_mapping = {
@@ -193,7 +193,6 @@ def plotOld():
     if len(viz) != 0:
         tab1.pydeck_chart(scatter)
         tab2.pydeck_chart(heatmap)
-    tab1.write("**Label:**")
     cols = tab1.columns(5)
     for i, (label, color) in enumerate(severity_color_mapping.items()):
          with cols[i]:
@@ -279,8 +278,7 @@ def plotNew():
         tab1.pydeck_chart(scatter)
         tab2.pydeck_chart(heatmap)
 
-    st.button(label="🔄 Refresh", on_click=load_streaming)
-    tab1.write("**Label:**")
+    
     cols = tab1.columns(5)
     for i, (label, color) in enumerate(severity_color_mapping.items()):
          with cols[i]:
@@ -289,6 +287,9 @@ def plotNew():
                 f"{label}",
                 unsafe_allow_html=True
             )
+    tab1.write("")
+    cs = tab1.columns([5,1])
+    cs[-1].button(label="🔄 Refresh", on_click=load_streaming)
 
 def graph():
     st.write('# Time to solve')
