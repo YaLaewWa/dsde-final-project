@@ -1,6 +1,7 @@
 #!/opt/anaconda3/envs/dsde-cp/bin/python
 # streamlit_pydeck_demo.py
 
+import math
 import streamlit as st
 import pandas as pd
 import pydeck as pdk
@@ -11,7 +12,7 @@ def toDayHour(d):
   h = (d - int(d)) * 24
   days = (d > 1) * "s" + " "
   hours = (h > 1) * "s" + " "
-  dayText = (str(int(d)) + " day" + days) if int(d) > 0 else ""
+  dayText = (str(int(d)) + " day" + days) if int(d) > 0 or int(h) == 0 else ""
   hourText = (str(int(h)) + " hour" + hours) if int(h) > 0 else ""
   return (dayText + hourText)
 
@@ -21,12 +22,15 @@ def toDayHour(d):
 # Function to load data
 @st.cache_data
 def load_data():
-    oldDataPath = 'data/mock3kRows.csv'
+    oldDataPath = 'data/toRak.csv'
     data = pd.read_csv(oldDataPath, index_col=0, nrows=3000)
     data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
     data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
-    data['display_duration'] = data['time_to_solve'].apply(toDayHour)
     data = data.drop(columns=['coords'])
+    data['timestamp'] = pd.to_datetime(data['timestamp'], format='ISO8601')
+    data['last_activity'] = pd.to_datetime(data['last_activity'],  format='ISO8601')
+    data['time_to_solve'] = (data['last_activity'] - data['timestamp']).dt.total_seconds() / (3600 * 24)
+    data['display_duration'] = data['time_to_solve'].apply(toDayHour)
     return data
 
 old_df = load_data()
@@ -345,7 +349,7 @@ def plotNew():
 
 def graph():
     st.write('# Time to solve')
-    fig = px.histogram(old_df, x="time_to_solve", labels={'time_to_solve': 'Time to solve (days)'})
+    fig = px.histogram(old_df, x="time_to_solve", labels={'time_to_solve': 'Time to solve (days)'}, nbins=math.ceil(old_df.time_to_solve.max()))
     st.plotly_chart(fig)
 
     st.write('# Severity')
