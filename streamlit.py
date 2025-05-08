@@ -104,7 +104,7 @@ def plotOld():
     else:
         prob_dict = st.session_state.prob_dict
 
-    with st.popover("Select problems"):
+    with st.sidebar.expander("Select problems"):
         prob_dict = st.session_state.prob_dict
         if st.button('Select all'):
             for i in problem_types:
@@ -116,21 +116,9 @@ def plotOld():
                 st.session_state[i] = False
             prob_dict = {i:False for i in problem_types}
             st.session_state.prob_dict = prob_dict
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            for i in problem_types[:8]:
-                prob_dict[i] = st.checkbox(i, key=i, value=prob_dict[i])
-            st.session_state.prob_dict = prob_dict
-
-        with col2:
-            for i in problem_types[8:16]:
-                prob_dict[i] = st.checkbox(i, key=i, value=prob_dict[i])
-            st.session_state.prob_dict = prob_dict
-
-        with col3:
-            for i in problem_types[16:]:
-                prob_dict[i] = st.checkbox(i, key=i, value=prob_dict[i])
-            st.session_state.prob_dict = prob_dict
+        for i in problem_types:
+            prob_dict[i] = st.checkbox(i, key=i, value=prob_dict[i])
+        st.session_state.prob_dict = prob_dict
 
     chosen_type = set()
     for i in problem_types:
@@ -138,8 +126,8 @@ def plotOld():
             chosen_type.add(i)
     # [st.badge(i) for i in chosen_type]
     # st.write("**Selected type**: ")
-    badge = ' '.join([f":green-badge[{i}]" for i in chosen_type])
-    st.markdown("**Selected type**: " + badge)
+    badge = ' '.join([f":blue-badge[{i}]" for i in chosen_type])
+    st.markdown("**Selected problem(s)**: " + badge)
     
 
     old_df['type'] = [i[1:-1].split(',') if type(i) == str else [] for i in old_df['type']]
@@ -227,7 +215,7 @@ def plotNew():
     else:
         new_prob_dict = st.session_state.new_prob_dict
 
-    with st.popover("Select problems"):
+    with st.sidebar.expander("Select problems"):
         new_prob_dict = st.session_state.new_prob_dict
         if st.button('Select all'):
             for i in new_problem_types:
@@ -239,21 +227,8 @@ def plotNew():
                 st.session_state[i] = False
             new_prob_dict = {i:False for i in new_problem_types}
             st.session_state.new_prob_dict = new_prob_dict
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            for i in new_problem_types[:7]:
-                new_prob_dict[i] = st.checkbox(i, key=i, value=new_prob_dict[i])
-            st.session_state.new_prob_dict = new_prob_dict
-
-        with col2:
-            for i in new_problem_types[7:14]:
-                new_prob_dict[i] = st.checkbox(i, key=i, value=new_prob_dict[i])
-            st.session_state.new_prob_dict = new_prob_dict
-
-        with col3:
-            for i in new_problem_types[14:]:
-                new_prob_dict[i] = st.checkbox(i, key=i, value=new_prob_dict[i])
-            st.session_state.new_prob_dict = new_prob_dict
+        for i in new_problem_types:
+            new_prob_dict[i] = st.checkbox(i, key=i, value=new_prob_dict[i])
 
     chosen_type = set()
     for i in new_problem_types:
@@ -261,8 +236,8 @@ def plotNew():
             chosen_type.add(i)
     # [st.badge(i) for i in chosen_type]
     # st.write("**Selected type**: ")
-    badge = ' '.join([f":green-badge[{i}]" for i in chosen_type])
-    st.markdown("**Selected type**: " + badge)
+    badge = ' '.join([f":blue-badge[{i}]" for i in chosen_type])
+    st.markdown("**Selected problem(s)**: " + badge)
 
     new_df['type'] = [i[1:-1].split(',') if type(i) == str else [] for i in new_df['type']]
 
@@ -344,13 +319,15 @@ def plotNew():
     cs[-1].button(label="🔄 Refresh", on_click=load_streaming)
 
 def graph():
-    st.write('# Time to solve')
+    st.write('## Time to solve')
     fig = px.histogram(old_df, x="time_to_solve", labels={'time_to_solve': 'Time to solve (days)'})
     st.plotly_chart(fig)
 
-    st.write('# Severity')
-    fig = px.pie(old_df, names="severity", color='severity', color_discrete_sequence=px.colors.sequential.RdBu[4::-1])
-    st.plotly_chart(fig)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write('# Severity')
+        fig = px.pie(old_df, names="severity", color='severity', color_discrete_sequence=px.colors.sequential.RdBu[4::-1])
+        st.plotly_chart(fig)
     # fig = px.pie(pd.DataFrame({'idx': range(11)}), names="idx", color='idx', color_discrete_sequence=px.colors.sequential.RdBu[::-1])
     # st.plotly_chart(fig)
 
@@ -369,38 +346,22 @@ def graph():
         mean_ttl = pd.DataFrame({'Severity':sev, 'Mean time to solve (days)': ttl_list})
         return mean_ttl
 
-    st.write('# Mean time to solve for each severity')
-    mean_ttl = calculate_mean_ttl()
-    fig = px.bar(mean_ttl, x='Severity', y='Mean time to solve (days)')
-    st.plotly_chart(fig)
-
-# def geojson():
-#     polygon = pdk.Layer(
-#         "GeoJsonLayer",
-#         geojson_data,
-#         opacity=0.8,
-#         stroked=False,
-#         filled=True,
-#         extruded=True,
-#         wireframe=True,
-#         get_elevation="properties.valuePerSqm / 20",
-#         get_fill_color="[255, 255, properties.growth * 255]",
-#         get_line_color=[255, 255, 255],
-#     )
-#     map = pdk.Deck(layers=[polygon], initial_view_state=view_state, map_style=map_style)
-#     st.pydeck_chart(map)
-
+    with col2:
+        st.write('## Mean time to solve for each severity')
+        mean_ttl = calculate_mean_ttl()
+        fig = px.bar(mean_ttl, x='Severity', y='Mean time to solve (days)')
+        st.plotly_chart(fig)
 
 def main():
     page = st.sidebar.radio(
         "Choose page",
-        ['Plot Old Data', 'Plot New Data', 'Histogram']
+        ['Plot Old Data', 'Plot New Data', 'Graph']
     )
     if page == 'Plot Old Data':
         plotOld()
     elif page == 'Plot New Data':
         plotNew()
-    elif page == 'Histogram':
+    elif page == 'Graph':
         graph()
     # elif page == 'Geojson':
     #     geojson()
