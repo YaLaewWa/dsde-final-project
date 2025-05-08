@@ -1,0 +1,15 @@
+{
+  "namespace" : "scrapingData.avro",
+  "type" : "record",
+  "name" : "scrapingData",
+  "fields" : [
+    {"name" : "ticket_id", "type" : "string"},
+    {"name" : "type", "type" : "string"},
+    {"name" : "organization", "type" : "string"},
+    {"name" : "comment", "type" : "string"},
+    {"name" : "coords", "type" : "string"},
+    {"name" : "subdistrict", "type" : "string"},
+    {"name" : "timestamp", "type" : "string"},
+    {"name" : "photo", "type" : "string"}
+  ]
+}
