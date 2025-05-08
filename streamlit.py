@@ -1,3 +1,4 @@
+#!/opt/anaconda3/envs/dsde-cp/bin/python
 # streamlit_pydeck_demo.py
 
 import streamlit as st
@@ -22,11 +23,14 @@ def load_data():
 old_df = load_data()
 
 def load_streaming():
-    newDataPath = "DataEngineer/data.csv"
-    data = pd.read_csv(newDataPath, index_col=0)
-    data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
-    data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
-    data = data.drop(columns=['coords'])
+    try:
+        newDataPath = "DataEngineer/data.csv"
+        data = pd.read_csv(newDataPath, index_col=0)
+        data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
+        data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
+        data = data.drop(columns=['coords'])
+    except:
+        data = pd.DataFrame(data={'ticket_id' : [],'type' : [],'organization' : [],'comment':[],'coords':[],'subdistrict' : [],'timestamp' : [],'photo' : [],'time_to_solve' : [],'severity' : []})
     return data
 
 def refresh():
