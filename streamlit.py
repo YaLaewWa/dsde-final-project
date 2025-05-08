@@ -55,8 +55,9 @@ problem_types = ['น้ำท่วม', 'ร้องเรียน', 'คว
        'เสนอแนะ', 'คนจรจัด', 'ห้องน้ำ', 'ป้ายจราจร', 'สอบถาม', 'ป้าย',
        'PM2.5']
 
-# viz
+new_problem_types = ['อื่นๆ', 'ผิดกฎจราจร', 'ความปลอดภัย', 'ความสะอาด', 'จุดเสี่ยง', 'ต้นไม้', 'เสียง', 'ฝุ่นควัน&กลิ่น&PM2.5', 'อาคารสถานที่ชำรุด', 'น้ำท่วม', 'ขยะ', 'อุปกรณ์ชำรุด', 'หาบเร่แผงลอย', 'สัตว์', 'เสนอแนะ', 'ประชาสัมพันธ์', 'สายสื่อสาร', 'ทางเท้า', 'ถนน', 'ไฟฟ้า']
 
+# viz
 # Sidebar controls
 # map_layer_type = st.sidebar.radio('Map Type', ["ScatterplotLayer", "HeatmapLayer"])
 
@@ -103,7 +104,7 @@ def plotOld():
     else:
         prob_dict = st.session_state.prob_dict
 
-    with st.popover("Select the problems"):
+    with st.popover("Select problems"):
         prob_dict = st.session_state.prob_dict
         if st.button('Select all'):
             for i in problem_types:
@@ -219,12 +220,49 @@ def plotOld():
 def plotNew():
     st.title('Bangkok problems visualization (streaming)')
     st.write('### Map')
-    prob_dict = {}
-    if 'prob_dict' not in st.session_state:
-        prob_dict = {i:True for i in problem_types}
-        st.session_state.prob_dict = prob_dict
+    new_prob_dict = {}
+    if 'new_prob_dict' not in st.session_state:
+        new_prob_dict = {i:True for i in new_problem_types}
+        st.session_state.new_prob_dict = new_prob_dict
     else:
-        prob_dict = st.session_state.prob_dict
+        new_prob_dict = st.session_state.new_prob_dict
+
+    with st.popover("Select problems"):
+        new_prob_dict = st.session_state.new_prob_dict
+        if st.button('Select all'):
+            for i in new_problem_types:
+                st.session_state[i] = True
+            new_prob_dict = {i:True for i in new_problem_types}
+            st.session_state.new_prob_dict = new_prob_dict
+        if st.button('Unselect all'):
+            for i in new_problem_types:
+                st.session_state[i] = False
+            new_prob_dict = {i:False for i in new_problem_types}
+            st.session_state.new_prob_dict = new_prob_dict
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            for i in new_problem_types[:7]:
+                new_prob_dict[i] = st.checkbox(i, key=i, value=new_prob_dict[i])
+            st.session_state.new_prob_dict = new_prob_dict
+
+        with col2:
+            for i in new_problem_types[7:14]:
+                new_prob_dict[i] = st.checkbox(i, key=i, value=new_prob_dict[i])
+            st.session_state.new_prob_dict = new_prob_dict
+
+        with col3:
+            for i in new_problem_types[14:]:
+                new_prob_dict[i] = st.checkbox(i, key=i, value=new_prob_dict[i])
+            st.session_state.new_prob_dict = new_prob_dict
+
+    chosen_type = set()
+    for i in new_problem_types:
+        if new_prob_dict[i]:
+            chosen_type.add(i)
+    # [st.badge(i) for i in chosen_type]
+    # st.write("**Selected type**: ")
+    badge = ' '.join([f":green-badge[{i}]" for i in chosen_type])
+    st.markdown("**Selected type**: " + badge)
 
     new_df['type'] = [i[1:-1].split(',') if type(i) == str else [] for i in new_df['type']]
 
