@@ -12,13 +12,28 @@ import json
 # Function to load data
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data\mock3kRows.csv", index_col=0)
-    df['longitude'] = [float(i.split(',')[0]) for i in df['coords']]
-    df['latitude'] = [float(i.split(',')[1]) for i in df['coords']]
-    df = df.drop(columns=['coords'])
-    return df
+    oldDataPath = 'data/mock3kRows.csv'
+    data = pd.read_csv(oldDataPath, index_col=0, nrows=3000)
+    data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
+    data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
+    data = data.drop(columns=['coords'])
+    return data
 
-df = load_data()
+old_df = load_data()
+
+def load_streaming():
+    newDataPath = "DataEngineer/data.csv"
+    data = pd.read_csv(newDataPath, index_col=0)
+    data['longitude'] = [float(i.split(',')[0]) for i in data['coords']]
+    data['latitude'] = [float(i.split(',')[1]) for i in data['coords']]
+    data = data.drop(columns=['coords'])
+    return data
+
+def refresh():
+  load_streaming()
+  st.rerun()
+
+new_df = load_streaming()
 
 problem_types = ['น้ำท่วม', 'ร้องเรียน', 'ความสะอาด', 'ท่อระบายน้ำ', 'ถนน', 'คลอง',
        'ทางเท้า', 'เสียงรบกวน', 'สะพาน', 'สายไฟ', 'กีดขวาง', 'แสงสว่าง',
@@ -34,8 +49,8 @@ problem_types = ['น้ำท่วม', 'ร้องเรียน', 'คว
 map_style = "mapbox://styles/mapbox/dark-v9"
 
 view_state = pdk.ViewState(
-                longitude=df['longitude'].mean(),
-                latitude=df['latitude'].mean(),
+                longitude=old_df['longitude'].mean(),
+                latitude=old_df['latitude'].mean(),
                 zoom=9
             )
 
@@ -64,7 +79,7 @@ severity_radius_mapping = {
 }
 
 # Main app
-def plot():
+def plotOld():
     st.title('Bangkok problems visualization (old)')
     st.write('### Map')
     prob_dict = {}
@@ -112,9 +127,9 @@ def plot():
     st.markdown("**Selected type**: " + badge)
     
 
-    df['type'] = [i[1:-1].split(',') if type(i) == str else [] for i in df['type']]
+    old_df['type'] = [i[1:-1].split(',') if type(i) == str else [] for i in old_df['type']]
 
-    viz = df[[True if set(i) & chosen_type else False for i in df['type']]]
+    viz = old_df[[True if set(i) & chosen_type else False for i in old_df['type']]]
     viz['color'] = [severity_color_mapping[i] for i in viz['severity']]
     viz['radius'] = [severity_radius_mapping[i] for i in viz['severity']]
     viz['color_hex'] = [severity_color_mapping_hex[i] for i in viz['severity']]
@@ -188,20 +203,107 @@ def plot():
                 unsafe_allow_html=True
             )
 
+def plotNew():
+    st.title('Bangkok problems visualization (streaming)')
+    st.write('### Map')
+    prob_dict = {}
+    if 'prob_dict' not in st.session_state:
+        prob_dict = {i:True for i in problem_types}
+        st.session_state.prob_dict = prob_dict
+    else:
+        prob_dict = st.session_state.prob_dict
+
+    new_df['type'] = [i[1:-1].split(',') if type(i) == str else [] for i in new_df['type']]
+
+    # viz = new_df[[True if set(i) & chosen_type else False for i in new_df['type']]]
+    viz = new_df[:]
+    viz['color'] = [severity_color_mapping[i] for i in new_df['severity']]
+    viz['radius'] = [severity_radius_mapping[i] for i in viz['severity']]
+    viz['color_hex'] = [severity_color_mapping_hex[i] for i in viz['severity']]
+
+    def create_scatter(dataframe):
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            dataframe,
+            get_position=["longitude", "latitude"],
+            get_radius='radius',
+            get_color='color',
+            pickable=True
+        )
+
+        tooltip = {
+            "html": """
+                <div style="border: 2px solid {color_hex}; border-radius: 10px; padding: 10px; background-color: #3d3d3d; width: 300px">
+                    <div style="
+                        display: -webkit-box;
+                        -webkit-line-clamp: 3;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    ">
+                        <b>Description:</b> {comment}
+                    </div>
+                    <div>
+                        <b>Type: </b>{type}
+                    </div>
+                    <div>
+                        <b>Time to solve (days): </b>{time_to_solve}
+                    </div>
+                    <div>
+                        <b>Severity: </b><span style="color: {color_hex}">{severity}</span>
+                    </div>
+                    <img src="{photo}" height="200" width="200" />
+                </div>
+            """,
+            "style": {"color": "white", 'background-color': 'transparent'}
+        }
+
+        return pdk.Deck(layers=[layer], initial_view_state=view_state, map_style=map_style, tooltip=tooltip)
+
+    def create_heatmap(dataframe):
+        layer = pdk.Layer(
+            "HeatmapLayer",
+            dataframe,
+            get_position=["longitude", "latitude"],
+            opacity=0.5,
+            pickable=True
+        )
+        return pdk.Deck(layers=[layer], initial_view_state=view_state, map_style=map_style)
+
+    # Display Map
+    
+    tab1, tab2 = st.tabs(["Scatter", "Heatmap"])
+    scatter = create_scatter(viz)
+    heatmap = create_heatmap(viz)
+    if len(viz) != 0:
+        tab1.pydeck_chart(scatter)
+        tab2.pydeck_chart(heatmap)
+
+    st.button(label="🔄 Refresh", on_click=load_streaming)
+    tab1.write("**Label:**")
+    cols = tab1.columns(5)
+    for i, (label, color) in enumerate(severity_color_mapping.items()):
+         with cols[i]:
+            st.markdown(
+                f"<div style='background-color: rgb({color[0]}, {color[1]}, {color[2]}); width: 15px; height: 15px; display: inline-block; margin-right: 10px;'></div>"
+                f"{label}",
+                unsafe_allow_html=True
+            )
+
 def graph():
     st.write('# Time to solve')
-    fig = px.histogram(df, x="time_to_solve", labels={'time_to_solve': 'Time to solve (days)'})
+    fig = px.histogram(old_df, x="time_to_solve", labels={'time_to_solve': 'Time to solve (days)'})
     st.plotly_chart(fig)
 
     st.write('# Severity')
-    fig = px.pie(df, names="severity", color='severity', color_discrete_sequence=px.colors.sequential.RdBu[4::-1])
+    fig = px.pie(old_df, names="severity", color='severity', color_discrete_sequence=px.colors.sequential.RdBu[4::-1])
     st.plotly_chart(fig)
     # fig = px.pie(pd.DataFrame({'idx': range(11)}), names="idx", color='idx', color_discrete_sequence=px.colors.sequential.RdBu[::-1])
     # st.plotly_chart(fig)
 
     @st.cache_data
     def calculate_mean_ttl():
-        ttl = df.groupby('severity').mean("time_to_solve")
+        ttl = old_df.groupby('severity').mean("time_to_solve")
         ttl = ttl.reset_index()
         sev = ['Very Low', 'Low', 'Medium', 'High', 'Very High']
         ttl_list = []
@@ -239,10 +341,12 @@ def graph():
 def main():
     page = st.sidebar.radio(
         "Choose page",
-        ['Plot', 'Histogram']
+        ['Plot Old Data', 'Plot New Data', 'Histogram']
     )
-    if page == 'Plot':
-        plot()
+    if page == 'Plot Old Data':
+        plotOld()
+    elif page == 'Plot New Data':
+        plotNew()
     elif page == 'Histogram':
         graph()
     # elif page == 'Geojson':
